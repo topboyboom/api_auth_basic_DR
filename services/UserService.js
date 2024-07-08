@@ -1,32 +1,15 @@
 import db from '../dist/db/models/index.js';
 import bcrypt from 'bcrypt';
 
-const createUser = async (req) => {
-    const {
-        name,
-        email,
-        password,
-        password_second,
-        cellphone
-    } = req.body;
-    if (password !== password_second) {
+const createUser = async (userData) => {
+    const {name,email,password,cellphone} = userData;
+    const existingUser = await db.User.findOne({ where: { email } });
+    if (existingUser) {
         return {
             code: 400,
-            message: 'Passwords do not match'
+            message: 'Email already exists'
         };
     }
-    const user = await db.User.findOne({
-        where: {
-            email: email
-        }
-    });
-    if (user) {
-        return {
-            code: 400,
-            message: 'User already exists'
-        };
-    }
-
     const encryptedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await db.User.create({
@@ -39,7 +22,70 @@ const createUser = async (req) => {
     return {
         code: 200,
         message: 'User created successfully with ID: ' + newUser.id,
+    };
+};
+
+const getAllUsers = async () => {
+    const users = await db.User.findAll({
+        where: {
+            status: true  // Usuarios activos
+        }
+    });
+    return {
+        code: 200,
+        message: users
+    };
+};
+
+const findUsers = async (eliminados, nombre, fechaInicioAntes, fechaInicioDespues,status) => {
+    // Construir objeto de filtros dinámicamente
+    const filters = {};
+    if (eliminados !== undefined) {
+        filters.status = eliminados === 'true' ? false : true;
     }
+    if (nombre) {
+        filters.name = { [Op.like]: `%${nombre}%` };
+    }
+    if (fechaInicioAntes) {
+        filters.createdAt = { [Op.lt]: new Date(fechaInicioAntes) };
+    }
+    if (fechaInicioDespues) {
+        filters.createdAt = { [Op.gt]: new Date(fechaInicioDespues) };
+    }
+    if (status != undefined) {
+        filters.status= status === 'true' ? true : false;
+    }
+
+    const users = await db.User.findAll({
+        where: filters
+    });
+    
+    return {
+        code: 200,
+        message: users
+    };
+};
+
+const bulkCreateUsers = async (users) => {
+    let successfulCount = 0;
+    let failedCount = 0;
+
+    for (const user of users) {
+        const result = await createUser(user);
+        if (result.code === 200) {
+            successfulCount++;
+        } else {
+            failedCount++;
+        }
+    }
+
+    return {
+        code: 200,
+        message: {
+            successfulCount,
+            failedCount
+        }
+    };
 };
 
 const getUserById = async (id) => {
@@ -55,12 +101,18 @@ const getUserById = async (id) => {
 }
 
 const updateUser = async (req) => {
-    const user = db.User.findOne({
+    const user = await db.User.findOne({
         where: {
             id: req.params.id,
             status: true,
         }
     });
+    if (!user) {
+        return {
+            code: 404,
+            message: 'User not found'
+        };
+    }
     const payload = {};
     payload.name = req.body.name ?? user.name;
     payload.password = req.body.password ? await bcrypt.hash(req.body.password, 10) : user.password;
@@ -78,18 +130,19 @@ const updateUser = async (req) => {
 }
 
 const deleteUser = async (id) => {
-    /* await db.User.destroy({
-        where: {
-            id: id
-        }
-    }); */
-    const user = db.User.findOne({
+    const user = await db.User.findOne({
         where: {
             id: id,
             status: true,
         }
     });
-    await  db.User.update({
+    if (!user) {
+        return {
+            code: 404,
+            message: 'User not found'
+        };
+    }
+    await db.User.update({
         status: false
     }, {
         where: {
@@ -102,9 +155,13 @@ const deleteUser = async (id) => {
     };
 }
 
+
 export default {
     createUser,
+    getAllUsers,
+    findUsers,
+    bulkCreateUsers,
     getUserById,
     updateUser,
     deleteUser,
-}
+};

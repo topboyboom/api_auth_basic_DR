@@ -7,7 +7,24 @@ import AuthMiddleware from '../middlewares/auth.middleware.js';
 const router = Router();
 
 router.post('/create', async (req, res) => {
-    const response = await UserService.createUser(req);
+    const response = await UserService.createUser(req.body);
+    res.status(response.code).json(response.message);
+});
+
+router.get('/getAllUsers', async (req, res) => {
+    const response = await UserService.getAllUsers();
+    res.status(response.code).json(response.message);
+});
+
+router.get('/findUsers', async (req, res) => {
+    const { eliminados, nombre, fechaInicioAntes, fechaInicioDespues,status } = req.query;
+    const response = await UserService.findUsers(eliminados, nombre, fechaInicioAntes, fechaInicioDespues,status);
+    res.status(response.code).json(response.message);
+});
+
+router.post('/bulkCreate', async (req, res) => {
+    const { users } = req.body;
+    const response = await UserService.bulkCreateUsers(users);
     res.status(response.code).json(response.message);
 });
 
