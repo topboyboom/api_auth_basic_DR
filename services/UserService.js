@@ -1,8 +1,19 @@
+import { Op } from 'sequelize';
 import db from '../dist/db/models/index.js';
 import bcrypt from 'bcrypt';
 
 const createUser = async (userData) => {
-    const {name,email,password,cellphone} = userData;
+    const { name, email, password, cellphone } = userData;
+
+    // Validar que el nombre solo contenga letras
+    const nameRegex = /^[a-zA-Z]+$/;
+    if (!nameRegex.test(name)) {
+        return {
+            code: 400,
+            message: 'Name must contain only letters'
+        };
+    }
+
     const existingUser = await db.User.findOne({ where: { email } });
     if (existingUser) {
         return {
@@ -10,6 +21,7 @@ const createUser = async (userData) => {
             message: 'Email already exists'
         };
     }
+
     const encryptedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await db.User.create({
@@ -19,11 +31,13 @@ const createUser = async (userData) => {
         cellphone,
         status: true
     });
+
     return {
         code: 200,
         message: 'User created successfully with ID: ' + newUser.id,
     };
 };
+
 
 const getAllUsers = async () => {
     const users = await db.User.findAll({
@@ -37,35 +51,45 @@ const getAllUsers = async () => {
     };
 };
 
-const findUsers = async (eliminados, nombre, fechaInicioAntes, fechaInicioDespues,status) => {
-    // Construir objeto de filtros dinámicamente
-    const filters = {};
-    if (eliminados !== undefined) {
-        filters.status = eliminados === 'true' ? false : true;
-    }
-    if (nombre) {
-        filters.name = { [Op.like]: `%${nombre}%` };
-    }
-    if (fechaInicioAntes) {
-        filters.createdAt = { [Op.lt]: new Date(fechaInicioAntes) };
-    }
-    if (fechaInicioDespues) {
-        filters.createdAt = { [Op.gt]: new Date(fechaInicioDespues) };
-    }
-    if (status != undefined) {
-        filters.status= status === 'true' ? true : false;
-    }
+const findUsers = async (eliminados, nombre, fechaInicioAntes, fechaInicioDespues, status) => {
+    try {
+        // Construir objeto de filtros dinámicamente
+        const filters = {};
+        if (eliminados !== undefined) {
+            filters.status = eliminados === 'true' ? false : true;
+        }
+        if (nombre) {
+            filters.name = { [Op.like]: `%${nombre}%` };
+        }
+        if (fechaInicioAntes && fechaInicioDespues) {
+            filters.createdAt = {
+                [Op.between]: [new Date(fechaInicioAntes), new Date(fechaInicioDespues)],
+            };
+        } else if (fechaInicioAntes) {
+            filters.createdAt = { [Op.lt]: new Date(fechaInicioAntes) };
+        } else if (fechaInicioDespues) {
+            filters.createdAt = { [Op.gt]: new Date(fechaInicioDespues) };
+        }
+        if (status !== undefined) {
+            filters.status = status === 'true' ? true : false;
+        }
 
-    const users = await db.User.findAll({
-        where: filters
-    });
-    
-    return {
-        code: 200,
-        message: users
-    };
+        const users = await db.User.findAll({
+            where: filters,
+        });
+
+        return {
+            code: 200,
+            message: users,
+        };
+    } catch (error) {
+        console.error('Error en findUsers:', error);
+        return {
+            code: 500,
+            message: 'Internal Server Error',
+        };
+    }
 };
-
 const bulkCreateUsers = async (users) => {
     let successfulCount = 0;
     let failedCount = 0;
