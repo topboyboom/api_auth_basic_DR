@@ -6,7 +6,6 @@ const validateUserAndPass = (req, res, next) => {
     }
     next();
 }
-
 const validateToken = async (req, res, next) => {
     if (!req.headers.token) {
         return res.status(401).json({ message: 'No Token' });

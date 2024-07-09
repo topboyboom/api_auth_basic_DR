@@ -38,7 +38,6 @@ const createUser = async (userData) => {
     };
 };
 
-
 const getAllUsers = async () => {
     const users = await db.User.findAll({
         where: {

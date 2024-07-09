@@ -19,5 +19,4 @@ router.post('/logout', AuthMiddleware.validateToken, async (req, res) => {
     const response = await AuthService.logout(req.headers.token);
     res.status(response.code).json(response.message);
 });
-
 export default router;

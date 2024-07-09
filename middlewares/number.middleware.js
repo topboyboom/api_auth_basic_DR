@@ -12,7 +12,6 @@ const isNumber = (req, res, next) => {
     }
     next();
 };
-
 export default {
     isNumber
 };

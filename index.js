@@ -12,7 +12,6 @@ app.use(
         preflightContinue: true,
     }),
 );
-
 app.use(bodyParser.json());
 app.use('/api/v1/users', UserController);
 app.use('/api/v1/auth', AuthController);

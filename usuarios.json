@@ -18,5 +18,18 @@
             "password": "password3",
             "cellphone": "5555555555"
         }
+,
+        {
+            "name": "+",
+            "email": "NopuederesgistrarseporNOMBRE@example.com",
+            "password": "password1",
+            "cellphone": "1234567890"
+        },
+        {
+            "name":"Diego",
+            "email": "usuario2@example.com",
+            "password": "password1",
+            "cellphone": "1234567890"
+        }
     ]
 }

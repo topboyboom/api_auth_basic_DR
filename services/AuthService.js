@@ -51,7 +51,6 @@ const logout = async (token) => {
         message: 'Logged out'
     };
 }
-
 export default {
     login,
     logout,

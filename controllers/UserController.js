@@ -27,7 +27,6 @@ router.post('/bulkCreate', async (req, res) => {
     const response = await UserService.bulkCreateUsers(users);
     res.status(response.code).json(response.message);
 });
-
 router.get(
     '/:id',
     [

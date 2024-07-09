@@ -15,7 +15,6 @@ const isValidUserById = async (req, res, next) => {
     }
     next();
 };
-
 const hasPermissions = async (req, res, next) => {
     const token = req.headers.token;
     const payload = JSON.parse(Buffer.from(token, 'base64').toString('ascii'));
